@@ -5,12 +5,11 @@ close all
 projPath = './';
 EXP = 'EXP4';
 filename = '20240722_EXP4_res_5000/Model_Thule_Transient'; 
-savename = 'EXP4_Dartmouth_update_calving';
+savename = 'EXP4_Dartmouth';
 profilefolder = [projPath, '/Profiles/'];
 
 % Loading model
-org=organizer('repository', ['../Thule/Models/'], 'prefix', '', 'steps', 0);
-%org=organizer('repository', [projPath, 'Models/'], 'prefix', '', 'steps', 0);
+org=organizer('repository', [projPath, 'Models/'], 'prefix', '', 'steps', 0);
 disp(['Load the model from ', filename])
 md = loadmodel(org, filename);
 
