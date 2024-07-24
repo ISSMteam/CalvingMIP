@@ -57,7 +57,6 @@ function results = ModelToNetCDF(md, varargin)
 	results.thickness= nan(sizex,sizey,length(results.timegrid)); %y,x,time
 	results.mask = nan(sizex,sizey,length(results.timegrid)); %y,x,time
 	results.base = nan(sizex,sizey,length(results.timegrid)); %y,x,time
-	results.calvingrate = nan(sizex,sizey,length(results.timegrid)); %y,x,time
 	results.icemask = nan(sizex,sizey,length(results.timegrid)); %y,x,time
 	results.oceanmask = nan(sizex,sizey,length(results.timegrid)); %y,x,time
 
@@ -72,7 +71,6 @@ function results = ModelToNetCDF(md, varargin)
 		vy = md.results.TransientSolution(end).Vy;
 		thickness = md.results.TransientSolution(end).Thickness;
 		base = md.results.TransientSolution(end).Base;
-		calvingrate = md.results.TransientSolution(end).CalvingCalvingrate; 
 		icemask = md.results.TransientSolution(end).MaskIceLevelset;
 		oceanmask = md.results.TransientSolution(end).MaskOceanLevelset;
 	elseif strcmp(expstr,'EXP2') | strcmp(expstr,'EXP4')
@@ -86,10 +84,14 @@ function results = ModelToNetCDF(md, varargin)
 		vy = [[md.initialization.vy], md.results.TransientSolution(indd).Vy];
 		thickness = [[md.geometry.thickness], md.results.TransientSolution(indd).Thickness];
 		base = [[md.geometry.base], md.results.TransientSolution(indd).Base];
-		calvingrate = [[md.results.TransientSolution(1).CalvingCalvingrate], md.results.TransientSolution(indd).CalvingCalvingrate]; % we don't have the iniital for this, so extrapolate from t=1
 		icemask = [[md.mask.ice_levelset], md.results.TransientSolution(indd).MaskIceLevelset];
 		oceanmask = [[md.mask.ocean_levelset], md.results.TransientSolution(indd).MaskOceanLevelset];
 	end
+	% save the no mask results, for calving front data process
+	vx_nomask = vx;
+	vy_nomask = vy;
+	thickness_nomask = thickness;
+
 	% set vel/thk in the open ocean to NaN
 	vx(icemask>0) = NaN;
 	vy(icemask>0) = NaN;
@@ -107,7 +109,6 @@ function results = ModelToNetCDF(md, varargin)
 		results.vymean(:, :, i) = transpose(InterpFromMeshToGrid(index, x, y, vy(:, tid), results.gridx, results.gridy, NaN));
 		results.thickness(:, :, i) = transpose(InterpFromMeshToGrid(index, x, y, thickness(:, tid), results.gridx, results.gridy, NaN));
 		results.base(:, :, i) = transpose(InterpFromMeshToGrid(index, x, y, base(:, tid), results.gridx, results.gridy, NaN));
-		results.calvingrate(:, :, i) = transpose(InterpFromMeshToGrid(index, x, y, calvingrate(:, tid), results.gridx, results.gridy, NaN));
 		results.icemask(:, :, i) = transpose(InterpFromMeshToGrid(index, x, y, icemask(:, tid), results.gridx, results.gridy, NaN));
 		results.oceanmask(:, :, i) = transpose(InterpFromMeshToGrid(index, x, y, oceanmask(:, tid), results.gridx, results.gridy, NaN));
 	end
@@ -121,6 +122,9 @@ function results = ModelToNetCDF(md, varargin)
 
 	% bed is static
 	results.bed = transpose(InterpFromMeshToGrid(index, x, y, md.geometry.bed, results.gridx, results.gridy, NaN));
+
+	% Total area of grounded and floating ice in the four quadrants
+	results.areafourquad = computeFourQuadrantIceArea(md, icemask);
 	%}}}
 	%Scalar variables %{{{
 	disp(['computing scalar variables..']);
@@ -148,53 +152,43 @@ function results = ModelToNetCDF(md, varargin)
 	disp(['loading profile variables..']);
 	if strcmp(expstr,'EXP3') | strcmp(expstr,'EXP4')
 		nameList = {'A', 'B', 'C', 'D'};
+		prfList = {'Caprona', 'Halbrane'};
 
-		% loof through Caprona
-		P = readtable('./Profiles/Caprona_Profiles.csv');
-		suffixname = 'Caprona_';
-		disp(['  Projecting solutions onto ' suffixname, ' profiles'])
-		for i = 1:numel(nameList)
-			pfx = P.([suffixname, 'Profile_', nameList{i}, '_X']);
-			pfy = P.([suffixname, 'Profile_', nameList{i}, '_Y']);
+		for ip = 1:numel(prfList)
+			% loof through Caprona and Halbrane
+			P = readtable(['./Profiles/', prfList{ip}, '_Profiles.csv']);
+			suffixname = [prfList{ip}, '_'];
+			disp(['  Projecting solutions onto ' suffixname, ' profiles'])
+			for i = 1:numel(nameList)
+				pfx = P.([suffixname, 'Profile_', nameList{i}, '_X']);
+				pfy = P.([suffixname, 'Profile_', nameList{i}, '_Y']);
 
-			% use a temporary profile variable to hold all the info
-			pf = [];
-			% distance from the start
-			pf.distance = P.([suffixname, 'Profile_', nameList{i}, '_S']);
+				% use a temporary profile variable to hold all the info
+				pf = [];
+				% distance from the start
+				pf.distance = P.([suffixname, 'Profile_', nameList{i}, '_S']);
 
-			% project ice thickness, icemask, vx and vy
-			pf.thickness = InterpFromMeshToMesh2d(index, x, y, thickness, pfx, pfy);
-			pf.vx = InterpFromMeshToMesh2d(index, x, y, vx, pfx, pfy);
-			pf.vy = InterpFromMeshToMesh2d(index, x, y, vy, pfx, pfy);
-			pf.icemask = InterpFromMeshToMesh2d(index, x, y, icemask, pfx, pfy);
-			pf.oceanmask = InterpFromMeshToMesh2d(index, x, y, oceanmask, pfx, pfy);
-			pf.mask = convertLevelsetsToCalvingMIPMask(pf.icemask, pf.oceanmask);
+				% project ice thickness, icemask, vx and vy
+				pf.thickness = InterpFromMeshToMesh2d(index, x, y, thickness, pfx, pfy);
+				pf.vx = InterpFromMeshToMesh2d(index, x, y, vx, pfx, pfy);
+				pf.vy = InterpFromMeshToMesh2d(index, x, y, vy, pfx, pfy);
+				pf.icemask = InterpFromMeshToMesh2d(index, x, y, icemask, pfx, pfy);
+				pf.oceanmask = InterpFromMeshToMesh2d(index, x, y, oceanmask, pfx, pfy);
+				pf.mask = convertLevelsetsToCalvingMIPMask(pf.icemask, pf.oceanmask);
 
-			results.profiles.([suffixname, nameList{i}]) = pf;
-		end
+				% get front 
+				pfc = [];
+				pfc.x = pfx;
+				pfc.y = pfy;
+				pfc.distance =pf.distance;
+				pfc.thickness = InterpFromMeshToMesh2d(index, x, y, thickness_nomask, pfx, pfy);
+				pfc.vx = InterpFromMeshToMesh2d(index, x, y, vx_nomask, pfx, pfy);
+				pfc.vy = InterpFromMeshToMesh2d(index, x, y, vy_nomask, pfx, pfy);
+				pfc.icemask = InterpFromMeshToMesh2d(index, x, y, icemask, pfx, pfy);
 
-		% loof through Halbrane
-		Q = readtable('./Profiles/Halbrane_Profiles.csv');
-		suffixname = 'Halbrane_';
-		disp(['  Projecting solutions onto ' suffixname, ' profiles'])
-		for i = 1:numel(nameList)
-			pfx = Q.([suffixname, 'Profile_', nameList{i}, '_X']);
-			pfy = Q.([suffixname, 'Profile_', nameList{i}, '_Y']);
-
-			% use a temporary profile variable to hold all the info
-			pf = [];
-			% distance from the start
-			pf.distance = Q.([suffixname, 'Profile_', nameList{i}, '_S']);
-
-			% project ice thickness, icemask, vx and vy
-			pf.thickness = InterpFromMeshToMesh2d(index, x, y, thickness, pfx, pfy);
-			pf.vx = InterpFromMeshToMesh2d(index, x, y, vx, pfx, pfy);
-			pf.vy = InterpFromMeshToMesh2d(index, x, y, vy, pfx, pfy);
-			pf.icemask = InterpFromMeshToMesh2d(index, x, y, icemask, pfx, pfy);
-			pf.oceanmask = InterpFromMeshToMesh2d(index, x, y, oceanmask, pfx, pfy);
-			pf.mask = convertLevelsetsToCalvingMIPMask(pf.icemask, pf.oceanmask);
-
-			results.profiles.([suffixname, nameList{i}]) = pf;
+				pf.front = getFrontFromProfiles(pfc);
+				results.profiles.([suffixname, nameList{i}]) = pf;
+			end
 		end
 	else
 		error('not implemented yet');	
@@ -239,7 +233,6 @@ function results = ModelToNetCDF(md, varargin)
 	nccreate(ExpName,'yvelmean','Dimensions',{'X' 321 'Y' 321 timeExtraStr numel(results.timegrid)},'FillValue',nan)
 	nccreate(ExpName,'lithk','Dimensions',{'X' 321 'Y' 321 timeExtraStr numel(results.timegrid)},'FillValue',nan)
 	nccreate(ExpName,'mask','Dimensions',{'X' 321 'Y' 321 timeExtraStr numel(results.timegrid)})
-	nccreate(ExpName,'calverate','Dimensions',{'X' 321 'Y' 321 timeExtraStr numel(results.timegrid)},'FillValue',nan)
 	nccreate(ExpName,'topg','Dimensions',{'X' 321 'Y' 321})
 
 	ncwrite(ExpName, 'xvelmean', results.vxmean)
@@ -247,21 +240,18 @@ function results = ModelToNetCDF(md, varargin)
 	ncwrite(ExpName, 'lithk', results.thickness)
 	ncwrite(ExpName, 'mask', results.mask)
 	ncwrite(ExpName, 'topg', results.bed)
-	ncwrite(ExpName, 'calverate', results.calvingrate)
 
 	ncwriteatt(ExpName,'xvelmean','units','m/a')
 	ncwriteatt(ExpName,'yvelmean','units','m/a')
 	ncwriteatt(ExpName,'lithk','units','m');
 	ncwriteatt(ExpName,'mask','flag_values','1, 2, 3');
 	ncwriteatt(ExpName,'topg','units','m');
-	ncwriteatt(ExpName,'calverate','units','m/a');
 
 	ncwriteatt(ExpName,'xvelmean','Standard_name','land_ice_vertical_mean_x_velocity')
 	ncwriteatt(ExpName,'yvelmean','Standard_name','land_ice_vertical_mean_y_velocity')
 	ncwriteatt(ExpName,'lithk','Standard_name','land_ice_thickness');
 	ncwriteatt(ExpName,'mask','flag_meanings','1=grounded ice, 2=floating ice, 3=open ocean');
 	ncwriteatt(ExpName,'topg','Standard_name','bedrock_altitude');
-	ncwriteatt(ExpName,'calverate','Standard_name','calving_rate');
 	%}}}
 	% Scalar variables {{{
 	nccreate(ExpName,'iareafl',		'Dimensions',{timeStr numel(results.Time1)})
@@ -292,6 +282,27 @@ function results = ModelToNetCDF(md, varargin)
 	ncwriteatt(ExpName,'tendlicalvf','Standard_name','tendency_of_land_ice_mass_due_to_calving');
 	ncwriteatt(ExpName,'tendligroundf','Standard_name','tendency_of_grounded_ice_mass');
 	%}}}
+	% Four quadrant variables {{{
+	nccreate(ExpName,'iareatotalNW',	'Dimensions',{timeStr numel(results.Time1)})
+	nccreate(ExpName,'iareatotalNE',	'Dimensions',{timeStr numel(results.Time1)})
+	nccreate(ExpName,'iareatotalSW',	'Dimensions',{timeStr numel(results.Time1)})
+	nccreate(ExpName,'iareatotalSE',	'Dimensions',{timeStr numel(results.Time1)})
+
+	ncwrite(ExpName,'iareatotalNW',results.areafourquad(2,:))
+	ncwrite(ExpName,'iareatotalNE',results.areafourquad(1,:))
+	ncwrite(ExpName,'iareatotalSW',results.areafourquad(3,:))
+	ncwrite(ExpName,'iareatotalSE',results.areafourquad(4,:))
+
+	ncwriteatt(ExpName,'iareatotalNW','units','m^2')
+	ncwriteatt(ExpName,'iareatotalNE','units','m^2')
+	ncwriteatt(ExpName,'iareatotalSW','units','m^2')
+	ncwriteatt(ExpName,'iareatotalSE','units','m^2')
+
+	ncwriteatt(ExpName,'iareatotalNW','Standard_name','total_ice_area_NorthWest')
+	ncwriteatt(ExpName,'iareatotalNE','Standard_name','total_ice_area_NorthEast')
+	ncwriteatt(ExpName,'iareatotalSW','Standard_name','total_ice_area_SouthWest')
+	ncwriteatt(ExpName,'iareatotalSE','Standard_name','total_ice_area_SouthEast')
+	%}}}
 	% Profiles {{{
 	if strcmp(expstr,'EXP3') | strcmp(expstr,'EXP4')
 		fullPre = {'Caprona', 'Halbrane'};		% prefix of the full profile name
@@ -313,14 +324,14 @@ function results = ModelToNetCDF(md, varargin)
 				nccreate(ExpName, ['lithk', sN], 'Dimensions', {fN numel(pf.distance)});
 				nccreate(ExpName, ['s', sN],'Dimensions',{fN numel(pf.distance)});
 				nccreate(ExpName, ['xvelmean', sN], 'Dimensions', {fN numel(pf.distance)}, 'FillValue', nan);
-				nccreate(ExpName,['yvelmean', sN],'Dimensions',{fN numel(pf.distance)}, 'FillValue', nan);
+				nccreate(ExpName, ['yvelmean', sN], 'Dimensions', {fN numel(pf.distance)}, 'FillValue', nan);
 				nccreate(ExpName, ['mask', sN], 'Dimensions', {fN numel(pf.distance)});
 			elseif strcmp(expstr,'EXP2') | strcmp(expstr,'EXP4')
 				% add time dimension to Exp2 and EXP4
 				nccreate(ExpName, ['lithk', sN], 'Dimensions', {fN numel(pf.distance) timeStr numel(results.Time1)} );
 				nccreate(ExpName, ['s', sN],'Dimensions',{fN numel(pf.distance) timeStr numel(results.Time1)});
 				nccreate(ExpName, ['xvelmean', sN], 'Dimensions', {fN numel(pf.distance) timeStr numel(results.Time1)}, 'FillValue', nan);
-				nccreate(ExpName,['yvelmean', sN],'Dimensions',{fN numel(pf.distance) timeStr numel(results.Time1)}, 'FillValue', nan);
+				nccreate(ExpName, ['yvelmean', sN], 'Dimensions',{ fN numel(pf.distance) timeStr numel(results.Time1)}, 'FillValue', nan);
 				nccreate(ExpName, ['mask', sN], 'Dimensions', {fN numel(pf.distance) timeStr numel(results.Time1)});
 			else
 				error('Not implemented')
@@ -338,11 +349,36 @@ function results = ModelToNetCDF(md, varargin)
 			ncwriteatt(ExpName, ['yvelmean' sN], 'units', 'm/a');
 			ncwriteatt(ExpName, ['mask', sN], 'flag_values', '1, 2, 3');
 
-			ncwriteatt(ExpName, ['lithk', sN], 'Standard_name','land_ice_thickness_along_profile_A');
-			ncwriteatt(ExpName, ['s', sN], 'Standard_name', 'distance_along_profile_A');
-			ncwriteatt(ExpName, ['xvelmean', sN], 'Standard_name', 'land_ice_vertical_mean_x_velocity_along_profile_A');
-			ncwriteatt(ExpName, ['yvelmean', sN], 'Standard_name', 'land_ice_vertical_mean_y_velocity_along_profile_A');
+			ncwriteatt(ExpName, ['lithk', sN], 'Standard_name',['land_ice_thickness_along_', fN]);
+			ncwriteatt(ExpName, ['s', sN], 'Standard_name', ['distance_along_', fN]);
+			ncwriteatt(ExpName, ['xvelmean', sN], 'Standard_name', ['land_ice_vertical_mean_x_velocity_along_', fN]);
+			ncwriteatt(ExpName, ['yvelmean', sN], 'Standard_name', ['land_ice_vertical_mean_y_velocity_along_', fN]);
 			ncwriteatt(ExpName, ['mask', sN], 'flag_meanings', '1=grounded ice, 2=floating ice, 3=open ocean');
+
+			% add Calving front data
+			nccreate(ExpName, ['xcf', sN], 'Dimensions', {timeStr numel(results.Time1)})
+			nccreate(ExpName, ['ycf', sN], 'Dimensions', {timeStr numel(results.Time1)})
+			nccreate(ExpName, ['xvelmeancf', sN], 'Dimensions', {timeStr numel(results.Time1)})
+			nccreate(ExpName, ['yvelmeancf', sN], 'Dimensions', {timeStr numel(results.Time1)})
+			nccreate(ExpName, ['lithkcf', sN], 'Dimensions', {timeStr numel(results.Time1)})
+
+			ncwrite(ExpName, ['xcf', sN], pf.front.x)
+			ncwrite(ExpName, ['ycf', sN], pf.front.y)
+			ncwrite(ExpName, ['xvelmeancf', sN], pf.front.vx)
+			ncwrite(ExpName, ['yvelmeancf', sN], pf.front.vy)
+			ncwrite(ExpName, ['lithkcf', sN], pf.front.thickness)
+
+			ncwriteatt(ExpName, ['xcf', sN], 'units', 'm')
+			ncwriteatt(ExpName, ['ycf', sN], 'units', 'm')
+			ncwriteatt(ExpName, ['xvelmeancf', sN], 'units', 'm/a')
+			ncwriteatt(ExpName, ['yvelmeancf', sN], 'units', 'm/a')
+			ncwriteatt(ExpName, ['lithkcf', sN], 'units', 'm')
+
+			ncwriteatt(ExpName, ['xcf', sN], 'Standard_name', ['x_calving_front_on_', fN])
+			ncwriteatt(ExpName, ['ycf', sN], 'Standard_name', ['y_calving_front_on_', fN])
+			ncwriteatt(ExpName, ['xvelmeancf', sN], 'Standard_name', ['land_ice_vertical_mean_x_velocity_at_calving_front_on_', fN])
+			ncwriteatt(ExpName, ['yvelmeancf', sN], 'Standard_name', ['land_ice_vertical_mean_y_velocity_at_calving_front_on_', fN])
+			ncwriteatt(ExpName, ['lithkcf', sN], 'Standard_name', ['land_ice_thickness_at_calving_front_on_', fN])
 		end
 	end
 	%}}}

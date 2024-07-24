@@ -8,7 +8,7 @@ function front=getFrontFromProfiles(p)
 		if (~strcmp(fnames{j}, 'distance'))
 			temp = zeros(size(x0));
 			for t = 1:numel(x0)
-				temp(t) = interp1(x,p.(fnames{j})(:,t), x0(t));
+				temp(t) = interp1(x,p.(fnames{j})(:,t), x0(t),'linear','extrap');
 			end
 			front.(fnames{j}) = temp;
 		end
