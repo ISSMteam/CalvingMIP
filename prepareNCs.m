@@ -36,17 +36,20 @@ if ~isfield(mdList{2}.results, 'InitialSolution')
 end
 %}}}
 % Generate profiles if not exist {{{
-profilefolder = './Profiles/'
+profilefolder = './Profiles/';
 cprofilename = [profilefolder, '/Caprona_Profiles.csv'];
 hprofilename = [profilefolder, '/Halbrane_Profiles.csv'];
 if (~exist(cprofilename, 'file') | (~exist(hprofilename, 'file')) )
-	createProfiles(EXP, profilefolder)
+	createProfiles('EXP4', profilefolder)
 end
-profilefolder = './Profiles/finer/'
+profilefolder = './Profiles/finer/';
 cprofilename = [profilefolder, '/Caprona_Profiles.csv'];
 hprofilename = [profilefolder, '/Halbrane_Profiles.csv'];
+if ~exist(profilefolder, 'dir')
+	mkdir(profilefolder)
+end
 if (~exist(cprofilename, 'file') | (~exist(hprofilename, 'file')) )
-	createProfiles(EXP, profilefolder, 1000)
+	createProfiles('EXP4', profilefolder, 1000)
 end
 %}}}
 % Create NetCDF {{{ 

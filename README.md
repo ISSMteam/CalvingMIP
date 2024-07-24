@@ -16,3 +16,4 @@ see [CalvingMIP](https://github.com/JRowanJordan/CalvingMIP).
 
 - `prepareNCs.m` : an example to generate NetCDF files for CalvingMIP from ISSM model
 	- `ModelToNetCDF.m`: function to generate NetCDF file from ISSM model, currently implemented for EXP3 & EXP4
+- `checkNCs.m`: after generating the NetCDF file, it worth to run this script to check if the reported solutions are consistent among the profiles.
