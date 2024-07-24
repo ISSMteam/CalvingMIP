@@ -7,8 +7,12 @@ function front=getFrontFromProfiles(p)
 	for j = 1:numel(fnames)
 		if (~strcmp(fnames{j}, 'distance'))
 			temp = zeros(size(x0));
-			for t = 1:numel(x0)
-				temp(t) = interp1(x,p.(fnames{j})(:,t), x0(t),'linear','extrap');
+			if size(p.(fnames{j}), 2) == numel(x0)
+				for t = 1:numel(x0)
+					temp(t) = interp1(x,p.(fnames{j})(:,t), x0(t),'linear','extrap');
+				end
+			else
+				temp = interp1(x,p.(fnames{j}), x0,'linear','extrap');
 			end
 			front.(fnames{j}) = temp;
 		end

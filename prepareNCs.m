@@ -5,7 +5,7 @@ close all
 % Setting {{{
 glacier = 'Thule';
 projPath = './';
-folderList = {'../Thule/Models/20240722_EXP4_res_5000/', '../Thule/Models/20230705_EXP3_res_5000/'};
+folderList = {'../Thule/Models/20230705_EXP3_res_5000/', '../Thule/Models/20240722_EXP4_res_5000/'};
 steps = [1];
 authorList = 'Gong Cheng(gong.cheng@dartmouth.edu), Helene Seroussi, Mathieu Morlighem';
 outputFolder = './Results/5kmResults/';
