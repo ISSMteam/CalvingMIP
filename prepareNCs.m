@@ -5,10 +5,12 @@ close all
 % Setting {{{
 glacier = 'Thule';
 projPath = './';
-folderList = {'../Thule/Models/20230705_EXP3_res_5000/', '../Thule/Models/20240722_EXP4_res_5000/'};
+%folderList = {'../Thule/Models/20230705_EXP3_res_5000/', '../Thule/Models/20240722_EXP4_res_5000/'};
+%outputFolder = './Results/5kmResults/';
+folderList = {'../Thule/Models/20230714_EXP3_res_2500//', '../Thule/Models/20240722_EXP4_res_2500/'};
+outputFolder = './Results/2_5kmResults/';
 steps = [1];
 authorList = 'Gong Cheng(gong.cheng@dartmouth.edu), Helene Seroussi, Mathieu Morlighem';
-outputFolder = './Results/5kmResults/';
 %}}}
 % Loading models {{{
 stepName = 'Transient';
@@ -31,6 +33,20 @@ if ~isfield(mdList{2}.results, 'InitialSolution')
 	mdList{2}.results.InitialSolution.GroundinglineMassFlux = mdList{1}.results.TransientSolution(end).GroundinglineMassFlux;
 
 	savemodel(org{2}, mdList{2});
+end
+%}}}
+% Generate profiles if not exist {{{
+profilefolder = './Profiles/'
+cprofilename = [profilefolder, '/Caprona_Profiles.csv'];
+hprofilename = [profilefolder, '/Halbrane_Profiles.csv'];
+if (~exist(cprofilename, 'file') | (~exist(hprofilename, 'file')) )
+	createProfiles(EXP, profilefolder)
+end
+profilefolder = './Profiles/finer/'
+cprofilename = [profilefolder, '/Caprona_Profiles.csv'];
+hprofilename = [profilefolder, '/Halbrane_Profiles.csv'];
+if (~exist(cprofilename, 'file') | (~exist(hprofilename, 'file')) )
+	createProfiles(EXP, profilefolder, 1000)
 end
 %}}}
 % Create NetCDF {{{ 

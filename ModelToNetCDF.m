@@ -157,6 +157,7 @@ function results = ModelToNetCDF(md, varargin)
 		for ip = 1:numel(prfList)
 			% loof through Caprona and Halbrane
 			P = readtable(['./Profiles/', prfList{ip}, '_Profiles.csv']);
+			Pc = readtable(['./Profiles/finer/', prfList{ip}, '_Profiles.csv']);
 			suffixname = [prfList{ip}, '_'];
 			disp(['  Projecting solutions onto ' suffixname, ' profiles'])
 			for i = 1:numel(nameList)
@@ -178,13 +179,13 @@ function results = ModelToNetCDF(md, varargin)
 
 				% get front 
 				pfc = [];
-				pfc.x = pfx;
-				pfc.y = pfy;
-				pfc.distance = pf.distance;
-				pfc.thickness = InterpFromMeshToMesh2d(index, x, y, thickness_nomask, pfx, pfy);
-				pfc.vx = InterpFromMeshToMesh2d(index, x, y, vx_nomask, pfx, pfy);
-				pfc.vy = InterpFromMeshToMesh2d(index, x, y, vy_nomask, pfx, pfy);
-				pfc.icemask = InterpFromMeshToMesh2d(index, x, y, icemask, pfx, pfy);
+				pfc.distance = Pc.([suffixname, 'Profile_', nameList{i}, '_S']);
+				pfc.x = Pc.([suffixname, 'Profile_', nameList{i}, '_X']);
+				pfc.y = Pc.([suffixname, 'Profile_', nameList{i}, '_Y']);
+				pfc.thickness = InterpFromMeshToMesh2d(index, x, y, thickness_nomask, pfc.x, pfc.y);
+				pfc.vx = InterpFromMeshToMesh2d(index, x, y, vx_nomask, pfc.x, pfc.y);
+				pfc.vy = InterpFromMeshToMesh2d(index, x, y, vy_nomask, pfc.x, pfc.y);
+				pfc.icemask = InterpFromMeshToMesh2d(index, x, y, icemask, pfc.x, pfc.y);
 
 				pf.front = getFrontFromProfiles(pfc);
 				results.profiles.([suffixname, nameList{i}]) = pf;
