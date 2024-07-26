@@ -8,7 +8,7 @@ projPath = './';
 %folderList = {'../Thule/Models/20230705_EXP3_res_5000/', '../Thule/Models/20240722_EXP4_res_5000/'};
 %outputFolder = './Results/5kmResults/';
 folderList = {'../Thule/Models/20230714_EXP3_res_2500//', '../Thule/Models/20240722_EXP4_res_2500/'};
-outputFolder = './Results/2_5kmResults/';
+outputFolder = './Results/2_5kmResults_extrap/';
 steps = [1];
 authorList = 'Gong Cheng(gong.cheng@dartmouth.edu), Helene Seroussi, Mathieu Morlighem';
 %}}}

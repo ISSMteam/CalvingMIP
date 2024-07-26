@@ -2,7 +2,7 @@ clear
 close all
 
 EXP = 4;
-folder = './Results/2_5kmResults/';
+folder = './Results/2_5kmResults_extrap/';
 ExpName = 'CalvingMIP_EXP4_ISSM_SSA_Dartmouth.nc';
 % load ice front results from NCs
 if EXP >= 3

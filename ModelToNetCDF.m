@@ -182,12 +182,12 @@ function results = ModelToNetCDF(md, varargin)
 				pfc.distance = Pc.([suffixname, 'Profile_', nameList{i}, '_S']);
 				pfc.x = Pc.([suffixname, 'Profile_', nameList{i}, '_X']);
 				pfc.y = Pc.([suffixname, 'Profile_', nameList{i}, '_Y']);
-				pfc.thickness = InterpFromMeshToMesh2d(index, x, y, thickness_nomask, pfc.x, pfc.y);
-				pfc.vx = InterpFromMeshToMesh2d(index, x, y, vx_nomask, pfc.x, pfc.y);
-				pfc.vy = InterpFromMeshToMesh2d(index, x, y, vy_nomask, pfc.x, pfc.y);
+				pfc.thickness = InterpFromMeshToMesh2d(index, x, y, thickness, pfc.x, pfc.y);
+				pfc.vx = InterpFromMeshToMesh2d(index, x, y, vx, pfc.x, pfc.y);
+				pfc.vy = InterpFromMeshToMesh2d(index, x, y, vy, pfc.x, pfc.y);
 				pfc.icemask = InterpFromMeshToMesh2d(index, x, y, icemask, pfc.x, pfc.y);
 
-				pf.front = getFrontFromProfiles(pfc);
+				pf.front = getFrontFromProfiles_extrap(pfc);
 				results.profiles.([suffixname, nameList{i}]) = pf;
 			end
 		end
