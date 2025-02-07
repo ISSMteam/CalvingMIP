@@ -44,9 +44,9 @@ for i = 1:numel(pnames)
 		hold on
 	end
 	subplot(2,2,1)
-	title('x position')
+	title('abs x position')
 	subplot(2,2,2)
-	title('y position')
+	title('abs y position')
 	subplot(2,2,3)
 	title('vel')
 	subplot(2,2,4)
