@@ -43,15 +43,15 @@ for i = 1:numel(pnames)
 		plot(time, squeeze(abs(thickness(i,j,:))))
 		hold on
 	end
+	subplot(2,2,1)
+	title('x position')
+	subplot(2,2,2)
+	title('y position')
+	subplot(2,2,3)
+	title('vel')
+	subplot(2,2,4)
+	title('thickness')
 end
-subplot(2,2,1)
-title('x position')
-subplot(2,2,2)
-title('y position')
-subplot(2,2,3)
-title('vel')
-subplot(2,2,4)
-title('thickness')
 
 ice(:,1) = ncread(ncfilename, 'iareatotalNW');
 ice(:,2) = ncread(ncfilename, 'iareatotalNE');
