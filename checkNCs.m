@@ -2,8 +2,8 @@ clear
 close all
 
 EXP = 4;
-folder = './Results/2_5kmResults_extrap/';
-ExpName = 'CalvingMIP_EXP4_ISSM_SSA_Dartmouth.nc';
+folder = './Results/';
+ExpName = 'calvingmip_exp4_issm_ho_dartmouth.nc';
 % load ice front results from NCs
 if EXP >= 3
 	pnames = {'Cap', 'Hal'};
@@ -44,3 +44,16 @@ for i = 1:numel(pnames)
 		hold on
 	end
 end
+subplot(2,2,1)
+title('x position')
+subplot(2,2,2)
+title('y position')
+subplot(2,2,3)
+title('vel')
+subplot(2,2,4)
+title('thickness')
+
+ice(:,1) = ncread(ncfilename, 'iareatotalNW');
+ice(:,2) = ncread(ncfilename, 'iareatotalNE');
+ice(:,3) = ncread(ncfilename, 'iareatotalSW');
+ice(:,4) = ncread(ncfilename, 'iareatotalSE');
