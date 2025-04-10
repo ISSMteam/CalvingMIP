@@ -7,8 +7,9 @@ glacier = 'Thule';
 projPath = './';
 %folderList = {'../Thule/Models/20230705_EXP3_res_5000/', '../Thule/Models/20240722_EXP4_res_5000/'};
 %outputFolder = './Results/5kmResults/';
-folderList = {'../Thule/Models/20230714_EXP3_res_2500//', '../Thule/Models/20240722_EXP4_res_2500/'};
-outputFolder = './Results/2_5kmResults_extrap/';
+%folderList = {'../Thule/Models/20230714_EXP3_res_2500//', '../Thule/Models/20240722_EXP4_res_2500/'};
+folderList = {'../Thule/Models/20250408_EXP3_res_5000/', '../Thule/Models/20250409_EXP4_res_5000/'};
+outputFolder = './Results/MOLHO5k/';
 steps = [1];
 authorList = 'Gong Cheng(gong.cheng@dartmouth.edu), Helene Seroussi, Mathieu Morlighem';
 %}}}
@@ -53,6 +54,6 @@ if (~exist(cprofilename, 'file') | (~exist(hprofilename, 'file')) )
 end
 %}}}
 % Create NetCDF {{{ 
-results3 = ModelToNetCDF(mdList{1}, 'directoryname', outputFolder, 'EXP', 3, 'author', authorList, 'institution', 'Dartmouth', 'flowequation', 'SSA');
-results4 = ModelToNetCDF(mdList{2}, 'directoryname', outputFolder, 'EXP', 4, 'author', authorList, 'institution', 'Dartmouth', 'flowequation', 'SSA');
+results3 = ModelToNetCDF(mdList{1}, 'directoryname', outputFolder, 'EXP', 3, 'author', authorList, 'institution', 'Dartmouth', 'flowequation', 'MOLHO');
+results4 = ModelToNetCDF(mdList{2}, 'directoryname', outputFolder, 'EXP', 4, 'author', authorList, 'institution', 'Dartmouth', 'flowequation', 'MOLHO');
 % }}}

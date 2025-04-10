@@ -2,8 +2,10 @@ clear
 close all
 
 EXP = 4;
-folder = './Results/';
-ExpName = 'calvingmip_exp4_issm_ho_dartmouth.nc';
+%folder = './Results/MOLHO5k/';
+folder = './Results/5kmResults/';
+%ExpName = 'CalvingMIP_EXP4_ISSM_MOLHO_Dartmouth.nc';
+ExpName = 'CalvingMIP_EXP4_ISSM_SSA_Dartmouth.nc';
 % load ice front results from NCs
 if EXP >= 3
 	pnames = {'Cap', 'Hal'};
