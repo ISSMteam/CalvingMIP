@@ -3,9 +3,10 @@ close all
 
 EXP = 4;
 %folder = './Results/MOLHO5k/';
-folder = './Results/5kmResults/';
+folder = './Results/HO/';
 %ExpName = 'CalvingMIP_EXP4_ISSM_MOLHO_Dartmouth.nc';
-ExpName = 'CalvingMIP_EXP4_ISSM_SSA_Dartmouth.nc';
+%ExpName = 'CalvingMIP_EXP4_ISSM_SSA_Dartmouth.nc';
+ExpName = 'CalvingMIP_EXP4_ISSM_HO_Dartmouth.nc';
 % load ice front results from NCs
 if EXP >= 3
 	pnames = {'Cap', 'Hal'};
@@ -33,16 +34,16 @@ for i = 1:numel(pnames)
 	figure('position',[0,1000,800,600])
 	for j = 1:numel(suffix)
 		subplot(2,2,1)
-		plot(time, squeeze(abs(xc(i,j,:))))
+		plot(time, squeeze(abs(xc(i,j,:))),'LineWidth',2)
 		hold on
 		subplot(2,2,2)
-		plot(time, squeeze(abs(yc(i,j,:))))
+		plot(time, squeeze(abs(yc(i,j,:))),'LineWidth',2)
 		hold on
 		subplot(2,2,3)
-		plot(time, squeeze(sqrt(vx(i,j,:).^2+vy(i,j,:).^2)))
+		plot(time, squeeze(sqrt(vx(i,j,:).^2+vy(i,j,:).^2)),'LineWidth',2)
 		hold on
 		subplot(2,2,4)
-		plot(time, squeeze(abs(thickness(i,j,:))))
+		plot(time, squeeze(abs(thickness(i,j,:))),'LineWidth',2)
 		hold on
 	end
 	subplot(2,2,1)

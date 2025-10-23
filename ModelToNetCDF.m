@@ -80,12 +80,21 @@ function results = ModelToNetCDF(md, varargin)
 
 		% take all the request time points
 		time = [0, md.results.TransientSolution(indd).time]; % time start at 0, add initial conditions at the beginning
-		vx = [[md.initialization.vx], md.results.TransientSolution(indd).Vx];
-		vy = [[md.initialization.vy], md.results.TransientSolution(indd).Vy];
-		thickness = [[md.geometry.thickness], md.results.TransientSolution(indd).Thickness];
-		base = [[md.geometry.base], md.results.TransientSolution(indd).Base];
-		icemask = [[md.mask.ice_levelset], md.results.TransientSolution(indd).MaskIceLevelset];
-		oceanmask = [[md.mask.ocean_levelset], md.results.TransientSolution(indd).MaskOceanLevelset];
+		if md.flowequation.isHO
+			vx = [[md.results.TransientSolution(1).Vx], md.results.TransientSolution(indd).Vx];
+			vy = [[md.results.TransientSolution(1).Vy], md.results.TransientSolution(indd).Vy];
+			thickness = [[md.results.TransientSolution(1).Thickness], md.results.TransientSolution(indd).Thickness];
+			base = [[md.results.TransientSolution(1).Base], md.results.TransientSolution(indd).Base];
+			icemask = [[md.results.TransientSolution(1).MaskIceLevelset], md.results.TransientSolution(indd).MaskIceLevelset];
+			oceanmask = [[md.results.TransientSolution(1).MaskOceanLevelset], md.results.TransientSolution(indd).MaskOceanLevelset];
+		else
+			vx = [[md.initialization.vx], md.results.TransientSolution(indd).Vx];
+			vy = [[md.initialization.vy], md.results.TransientSolution(indd).Vy];
+			thickness = [[md.geometry.thickness], md.results.TransientSolution(indd).Thickness];
+			base = [[md.geometry.base], md.results.TransientSolution(indd).Base];
+			icemask = [[md.mask.ice_levelset], md.results.TransientSolution(indd).MaskIceLevelset];
+			oceanmask = [[md.mask.ocean_levelset], md.results.TransientSolution(indd).MaskOceanLevelset];
+		end
 	end
 	% save the no mask results, for calving front data process
 	vx_nomask = vx;
